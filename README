@@ -1,11 +1,25 @@
 ** Liards - You are what you is
 
-The developer of this library doesn't know what these letters stand for exactly, but he does prefer when it's pronounced "Liiarrdzzzz!!", As if spoken by a highly intoxicated, older slightly overweight and generally off-balanced individual in an overly filled bar. As in "Ye're all a bunzjov liards, in and round dust street!!! I lizpededed on byte-compilin when you'ezz wer cho small zoo lifta cup o coffee. Punks!! Stealin me job, settin back computtin wuznot years. I'l crush you beans... bones... beans.. lika.." *thud* "... zzzzzzz ...."
+The developer of this library doesn't know what these letters stand for
+exactly, but he does prefer when it's pronounced "Liiarrdzzzz!!", As if spoken
+by a highly intoxicated, older slightly overweight and generally off-balanced
+individual in an overly filled bar. As in "Ye're all a bunzjov liards, in and
+round dust street!!! I lizpededed on byte-compilin when you'ezz wer cho small
+zoo lifta cup o coffee. Punks!! Stealin me job, settin back computtin wuznot
+years. I'l crush you beans... bones... beans.. lika.." *thud* "... zzzzzzz
+...."
 
 
 ** Introduction
 
-Liards simply wants assembly forms for the arm7 and/or arm9 processor of a Nintendo DS and transforms them into an .nds file, to be executed on a real live DS or a DS emulator. It's a bit simplish right now, and will probably be so indefinitely, but once it has been in work a bit, it should acquire a bit more functions. Ideally it would be a Nintendo DS development kit for assembler, perhaps to a point that you could or not be mistaken that the abstraction layer actually hides some kind of lisp implementation somewhere. For now I'm just glad it works, frankly.
+Liards simply wants assembly forms for the arm7 and/or arm9 processor of a
+Nintendo DS and transforms them into an .nds file, to be executed on a real
+live DS or a DS emulator. It's a bit simplish right now, and will probably be
+so indefinitely, but once it has been in work a bit, it should acquire a bit
+more functions. Ideally it would be a Nintendo DS development kit for
+assembler, perhaps to a point that you could or not be mistaken that the
+abstraction layer actually hides some kind of lisp implementation
+somewhere. For now I'm just glad it works, frankly.
 
 
 ** Licence - LLGPL, see the included LICENSE file
@@ -26,33 +40,51 @@ To get the latest development version, do a darcs get:
 
 darcs get http://common-lisp.net/project/liards/darcs/liards
 
-Liards depends on Armish, Arnesi, Split-sequence and FiveAM (because it's needed by Armish). Get them to play nice with asdf and fire up Liards.
+Liards depends on Armish, Arnesi, Split-sequence and FiveAM (because it's
+needed by Armish). Get them to play nice with asdf and fire up Liards.
 
 
 ** Testing
 
-execute:
-(nds-test-compile (initialize-and-make-red) (arm7-loop) "red-test.nds")
+execute: (nds-test-compile (initialize-and-make-red) (arm7-loop)
+"red-test.nds")
 
-Where initialize-and-make-red and arm7-loop are functions that output opcodes that have been assembled with assemble. See the test.lisp file. If all went well an .nds file called red-test.nds will lie waiting for you in the test-roms directory. Load it in an emulator or upload it to your Nintendo DS if you've got the know-how. If stuff fails, you'll find some debugging globals and functions in test.lisp to aid you. Of course this shouldn't be the case for this initial setup. If stuff DID fail, send a mail.
+Where initialize-and-make-red and arm7-loop are functions that output opcodes
+that have been assembled with assemble. See the test.lisp file. If all went
+well an .nds file called red-test.nds will lie waiting for you in the test-roms
+directory. Load it in an emulator or upload it to your Nintendo DS if you've
+got the know-how. If stuff fails, you'll find some debugging globals and
+functions in test.lisp to aid you. Of course this shouldn't be the case for
+this initial setup. If stuff DID fail, send a mail.
 
-The test.lisp file also contains some extra debugging aids to query headers. Have a look if you feel you have a need.
+The test.lisp file also contains some extra debugging aids to query
+headers. Have a look if you feel you have a need.
 
-The resulting .nds file in the command above has been tested on various emulators, wireless-multiboot and a supercard micro-sd slot-2 card. All but DSEmu did what was expected, and DSEmu failed because it didn't support the arm blx instruction properly.
+The resulting .nds file in the command above has been tested on various
+emulators, wireless-multiboot and a supercard micro-sd slot-2 card. All but
+DSEmu did what was expected, and DSEmu failed because it didn't support the arm
+blx instruction properly.
 
 
 ** Exported functions
 
-Well... again... this function is exported, because you have to export at least one function. Is what i think. It's all you need really together with the assemble function from Armish, but this function is just gonna be the base of a larger function/macro structure to write useful stuff. Either i'm gonna write it or you, inside the Liards package or in another, but this function is hardly to be called a proper interface to outside packages. I'm not even satisfied by the argument handling. Still, it's all you need...
+Well... again... this function is exported, because you have to export at least
+one function. Is what i think. It's all you need really together with the
+assemble function from Armish, but this function is just gonna be the base of a
+larger function/macro structure to write useful stuff. Either i'm gonna write
+it or you, inside the Liards package or in another, but this function is hardly
+to be called a proper interface to outside packages. I'm not even satisfied by
+the argument handling. Still, it's all you need...
 
-- nds-compile - compiles an .nds file when fed compiled arm9 and arm7 code and   optionally a name and a directory.
-syntax:
-(nds-compile arm9-code arm7-code &optional (file "my.nds") (dir *rom-dir*))
+- nds-compile - compiles an .nds file when fed compiled arm9 and arm7 code and
+optionally a name and a directory.  syntax: (nds-compile arm9-code arm7-code
+&optional (file "my.nds") (dir *rom-dir*))
 
-Where arm9-code and arm7-code are lists of opcodes/compiled instructions for the appropriate processor. File and *rom-dir* are file and rom-dir. *rom-dir* is set to the `roms' dir under the liards root.
+Where arm9-code and arm7-code are lists of opcodes/compiled instructions for
+the appropriate processor. File and *rom-dir* are file and rom-dir. *rom-dir*
+is set to the `roms' dir under the liards root.
 
-example usage:
-(nds-compile (initialize-and-make-red) (arm7-loop) "red.nds")
+example usage: (nds-compile (initialize-and-make-red) (arm7-loop) "red.nds")
 
 
 ** History
@@ -62,4 +94,5 @@ First version
 
 ** Todo
 
-- a few header entries that should better have values which are better set through calculation are as of now fixed, most notably rom-size. 
+- a few header entries that should better have values which are better set
+through calculation are as of now fixed, most notably rom-size.
