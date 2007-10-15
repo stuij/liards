@@ -1,10 +1,10 @@
 (in-package :liards)
 
-(defvar *rom-dir* (append (pathname-directory *load-truename*)
-                          (list "roms")))
+(defvar *rom-dir* (merge-pathnames #p"roms" 
+                                   (asdf:component-pathname (asdf:find-system :liards))))
 
 (defun rom-location (&optional (rom-name "my.nds") (rom-dir *rom-dir*))
-  (concatenate 'string (namestring (make-pathname :directory rom-dir)) rom-name))
+  (concatenate 'string (namestring rom-dir) "/"  rom-name))
 
 (defun write-rom (rom &key (file "my.nds") (dir *rom-dir*))
   (with-open-file (s (rom-location file dir) :direction :output :element-type '(unsigned-byte 8) :if-exists :supersede)
