@@ -3,10 +3,10 @@
 ;;; make a queryable rom
 ;;  globals in abun' make the coders testing fun
 (defvar *ref-rom-dir* (merge-pathnames #p"reference-roms" 
-                 (asdf:component-pathname (asdf:find-system :liards))))
+                                       (asdf:component-pathname (asdf:find-system :liards))))
 
 (defvar *test-rom-dir* (merge-pathnames #p"test-roms" 
-                 (asdf:component-pathname (asdf:find-system :liards))))
+                                        (asdf:component-pathname (asdf:find-system :liards))))
 
 (defvar *arm7-bin* '(#xFE #xFF #xFF #xEA)) ; sets core in eternal loop
 
@@ -102,48 +102,51 @@
 ;;; testing the assembly facilities
 
 (defun initialize-and-make-red ()
-  (assemble arm9 arm    
-            (blx :main)
+  (assemble 'arm9 'arm    
+    (emit-asm
+     (blx :main)
     
-            code16
+     code16
 
-            :main
-            (ldr r0 #x04000000)           ; hardware-registers offset and address of reg-disp-ctrl
-            (mov r1 #x3)                  ; both screens on bits
-            (ldr r2 #x00020000)           ; framebuffer mode bits
-            (mov r3 #x80)                 ; vram bank a enabled, lcd bits
-            (ldr r4 #x04000304)           ; reg-power-ctrl
-            (mov r5 r4)                   ; see below
-            (sub r5 #xC4)                 ; 0x04000240 == reg-vram-ctrl-a
+     :main
+     (ldr r0 #x04000000) ; hardware-registers offset and address of reg-disp-ctrl
+     (mov r1 #x3)                         ; both screens on bits
+     (ldr r2 #x00020000)                  ; framebuffer mode bits
+     (mov r3 #x80)                        ; vram bank a enabled, lcd bits
+     (ldr r4 #x04000304)                  ; reg-power-ctrl
+     (mov r5 r4)                          ; see below
+     (sub r5 #xC4)                        ; 0x04000240 == reg-vram-ctrl-a
 
-            (str r1 (r4 0))
-            (str r2 (r0 0))
-            (str r3 (r5 0))
+     (str r1 (r4 0))
+     (str r2 (r0 0))
+     (str r3 (r5 0))
 
-            (ldr r0 #x06800000)
-            (mov r1 #x31)
-            (ldr r2 #xC000)
+     (ldr r0 #x06800000)
+     (mov r1 #x31)
+     (ldr r2 #xC000)
 
-            :write-screen-red
-            (strh r1 (r0 0))
-            (add r0 #x2)
-            (sub r2 r2 #x1)
-            (bne :write-screen-red)
+     :write-screen-red
+     (strh r1 (r0 0))
+     (add r0 #x2)
+     (sub r2 r2 #x1)
+     (bne :write-screen-red)
 
-            :loop
-            (b :loop)))
+     :loop
+     (b :loop))))
 
 (defun arm7-loop ()
-  (assemble arm7 arm
-            :loop
-            (b :loop)))
+  (assemble 'arm7 'arm
+    (emit-asm
+     :loop
+     (b :loop))))
 
 (defun testerdetest ()
-  (assemble arm9 arm
-            (adr r3 :main)
-            (mov r3 r4)
-            (mov r5 r6)
-            :main))
+  (assemble 'arm9 'arm
+    (emit-asm
+     (adr r3 :main)
+     (mov r3 r4)
+     (mov r5 r6)
+     :main)))
 
 ;; test - for testing
 ;; (nds-test-compile (initialize-and-make-red) (arm7-loop) "red-test.nds")
