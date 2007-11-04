@@ -14,12 +14,8 @@ years. I'l crush you beans... bones... beans.. lika.." *thud* "... zzzzzzz
 
 Liards simply wants assembly forms for the arm7 and/or arm9 processor of a
 Nintendo DS and transforms them into an .nds file, to be executed on a real
-live DS or a DS emulator. It's a bit simplish right now, and will probably be
-so indefinitely, but once it has been in work a bit, it should acquire a bit
-more functions. Ideally it would be a Nintendo DS development kit for
-assembler, perhaps to a point that you could or not be mistaken that the
-abstraction layer actually hides some kind of lisp implementation
-somewhere. For now I'm just glad it works, frankly.
+live DS or a DS emulator. It has also some memory locations defined. Nothing
+special. Nothing to see. Move along.
 
 
 ** Licence - LLGPL, see the included LICENSE file
@@ -32,16 +28,20 @@ somewhere. For now I'm just glad it works, frankly.
 
 ** Installation
 
-To get the latest release, download it from common-lisp.net:
-
-http://common-lisp.net/project/liards/liards-latest.tar.gz
-
 To get the latest development version, do a darcs get:
 
 darcs get http://common-lisp.net/project/liards/darcs/liards
 
 Liards depends on Armish, Arnesi, Split-sequence and FiveAM (because it's
-needed by Armish). Get them to play nice with asdf and fire up Liards.
+needed by Armish).
+
+darcs get http://common-lisp.net/project/liards/darcs/umpa-lumpa
+darcs get http://common-lisp.net/project/armish/darcs/armish
+darcs get http://common-lisp.net/project/bese/repos/arnesi_dev
+darcs get http://common-lisp.net/project/bese/repos/fiveam
+http://ww.telent.net/cclan/split-sequence.tar.gz
+
+Get them to play nice with asdf and fire up Liards.
 
 
 ** Testing
@@ -89,7 +89,7 @@ example usage: (nds-compile (initialize-and-make-red) (arm7-loop) "red.nds")
 
 ** History
 
-First version
+Almost non-existant
 
 
 ** Todo
