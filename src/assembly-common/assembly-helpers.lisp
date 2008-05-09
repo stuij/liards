@@ -1,7 +1,15 @@
-(in-package :mandel)
+(in-package :liards)
+
+(defparameter *arm-fns* (make-hash-table))
 
 (defun gather-code (&rest args)
   (gather args))
+
+(defun gather (&rest instr-lists)
+  (apply #'append instr-lists))
+
+(defun emit (&rest atoms)
+  (remove 'nil atoms))
 
 (defmacro def-arm (name args &rest body)
   "fn that outputs arm code"
@@ -18,7 +26,6 @@
            (progn ,@body))))
 
 ;; general lookup-table functionality reachable from register
-
 (defvar *jr*) ;; like in Dallas, the reg with the contacts
 
 (defvar *jr-hash*)

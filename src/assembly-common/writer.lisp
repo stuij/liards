@@ -1,4 +1,4 @@
-(in-package :mandel)
+(in-package :liards)
 
 (defun setup-writer-code ()
   (let* ( ;; regs

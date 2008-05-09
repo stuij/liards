@@ -13,21 +13,24 @@
 
                (:module :spec-related
                         :components
-                        ((:file "registers"       :depends-on ("packages"))
-                         (:file "hardware-layout" :depends-on ("packages"))))
+                        ((:file "registers")
+                         (:file "hardware-layout"))
+                        :depends-on ("packages"))
 
                (:module :rom-creation
                         :components
-                        ((:file "crc"             :depends-on ("packages"))                        
-                         (:file "header-helpers"  :depends-on ("packages"))
+                        ((:file "crc")                        
+                         (:file "header-helpers")
                          (:file "header"          :depends-on ("header-helpers"))
                          (:file "file-stitch"     :depends-on ("crc"
                                                                "header"))
                          (:file "test"            :depends-on ("file-stitch")))
-                        :depends-on :spec-related)
+                        :depends-on ("packages" :spec-related))
 
                (:module :assembly-common
+                        :components
                         ((:file "assembly-helpers")
                          (:file "arm-routines"    :depends-on ("assembly-helpers"))
                          (:file "font")
-                         (:file "writer"          :depends-on ("arm-routines" "font"))))))))
+                         (:file "writer"          :depends-on ("arm-routines" "font")))
+                        :depends-on ("packages" :spec-related))))))

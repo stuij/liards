@@ -1,4 +1,4 @@
-(in-package :mandel)
+(in-package :liards)
 
 (def-asm-fn init-system ()
   (emit-asm
