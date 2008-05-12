@@ -43,17 +43,23 @@
     char-offsets
     char-widths))
 
+(defun add-jr-reachables (new-reachables)
+  (setf *jr-reachables*
+        (append *jr-reachables* (convert-to-intern new-reachables :liards))))
+
 (defun get-jr-offset (thing)
   "reference offset address reachable from *jr*"
-  (aif (gethash thing *jr-hash*)
-       it
-       (error "jr offset request has hit upon uninitialized value ~A. please correct. thank you."
-              thing)))
+  (let ((internal-thing (intern (format nil "~a" thing) :liards)))
+    (aif (gethash internal-thing *jr-hash*)
+         it
+         (error "jr offset request has hit upon uninitialized value ~A. please correct. thank you."
+                internal-thing))))
 
 (defun set-jr (thing val)
-  (if (position thing *jr-reachables*)
-      (setf (gethash thing *jr-hash*) val)
-      (error "~A is not reachable through jr" thing)))
+  (let ((internal-thing (intern (format nil "~a" thing) :liards)))
+    (if (position internal-thing *jr-reachables*)
+        (setf (gethash internal-thing *jr-hash*) val)
+        (error "~A is not reachable through jr" internal-thing))))
 
 (defun check-jr-reachables ()
   (loop for reachable in *jr-reachables*

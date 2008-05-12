@@ -44,4 +44,37 @@
    :+dtcm+
    :+palette-ram+
    :+sub-palette-ram+
-   :+oam-main+))
+   :+oam-main+
+
+   ;; assembly-helpers
+   :gather-code
+   :gather
+   :emit
+   :def-arm
+   :emit-arm-fns
+   :def-asm-fn
+   :*jr*
+   :*jr-hash*
+   :*jr-address*
+   :*jr-reachables*
+   :add-jr-reachables
+   :get-jr-offset
+   :set-jr
+   :check-jr-reachables
+
+   ;; font
+   :make-font
+   :*text-color*
+   :*text-bg-color*
+   :*char-x-data*
+   :*char-y-data*
+   :*char-sizes*
+   :*char-offsets*
+   :*char-widths*
+   :*max-font-height*
+   :*space-length*
+   :*letter-spacing*
+   :*line-spacing*
+
+   ;; writer
+   :setup-writer-code))

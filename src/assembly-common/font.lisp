@@ -18,7 +18,7 @@
 (defvar *letter-spacing*)
 (defvar *line-spacing*)
 
-;; todo: redo the char layout so as we have a uft-16 layout
+;;font data
 (defvar *font-info*
   '((32
      'space 2)
