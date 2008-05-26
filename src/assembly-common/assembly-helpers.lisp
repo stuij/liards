@@ -37,7 +37,14 @@
 (defmacro def-asm-fn (name args &body body)
   `(setf (gethash ',name *arm-fns*)
          (lambda ,args
-           (progn ,@body))))
+           ,@body)))
+
+(defmacro def-asm-fn-lite (name &body body)
+  `(setf (gethash ',name *arm-fns*)
+         (lambda ()
+           (emit-asm
+            ,(intern  (symbol-name name) :keyword)
+            ,@body))))
 
 ;; general lookup-table functionality reachable from register
 (defvar *jr*) ;; like in Dallas, the reg with the contacts
