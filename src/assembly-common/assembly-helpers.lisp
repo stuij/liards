@@ -11,14 +11,28 @@
 (defun emit (&rest atoms)
   (remove 'nil atoms))
 
-(defmacro def-arm (name args &rest body)
+(defmacro set-asm-init-routines (&body forms)
+  `(set-arm-init-fn (lambda ()
+                      ,@forms)))
+
+(defmacro def-asm (name args &rest body)
   "fn that outputs arm code"
   `(defun ,name ,args
      (emit-asm ,@body)))
 
+(let ((init-fn (lambda ()
+                 (warn "no init-fn defined"))))
+
+  (defun set-asm-init-fn (fn)
+    (setf init-fn fn))
+  
+  (defun emit-init-fn ()
+    (funcall init-fn)))
+
 (defun emit-arm-fns ()
-  (loop for init being the hash-value in *arm-fns*
-     append (funcall init)))
+  (append (emit-init-fn)
+          (loop for init being the hash-value in *arm-fns*
+             append (funcall init))))
 
 (defmacro def-asm-fn (name args &body body)
   `(setf (gethash ',name *arm-fns*)
