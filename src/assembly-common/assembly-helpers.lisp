@@ -12,7 +12,7 @@
   (remove 'nil atoms))
 
 (defmacro set-asm-init-routines (&body forms)
-  `(set-arm-init-fn (lambda ()
+  `(set-asm-init-fn (lambda ()
                       ,@forms)))
 
 (defmacro def-asm (name args &rest body)
