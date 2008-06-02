@@ -1,51 +1,5 @@
 (in-package :liards)
 
-(defparameter *arm-fns* (make-hash-table))
-
-(defun gather-code (&rest args)
-  (gather args))
-
-(defun gather (&rest instr-lists)
-  (apply #'append instr-lists))
-
-(defun emit (&rest atoms)
-  (remove 'nil atoms))
-
-(defmacro set-asm-init-routines (&body forms)
-  `(set-asm-init-fn (lambda ()
-                      ,@forms)))
-
-(defmacro def-asm (name args &rest body)
-  "fn that outputs arm code"
-  `(defun ,name ,args
-     (emit-asm ,@body)))
-
-(let ((init-fn (lambda ()
-                 (warn "no init-fn defined"))))
-
-  (defun set-asm-init-fn (fn)
-    (setf init-fn fn))
-  
-  (defun emit-init-fn ()
-    (funcall init-fn)))
-
-(defun emit-arm-fns ()
-  (append (emit-init-fn)
-          (loop for init being the hash-value in *arm-fns*
-             append (funcall init))))
-
-(defmacro def-asm-fn (name args &body body)
-  `(setf (gethash ',name *arm-fns*)
-         (lambda ,args
-           ,@body)))
-
-(defmacro def-asm-fn-lite (name &body body)
-  `(setf (gethash ',name *arm-fns*)
-         (lambda ()
-           (emit-asm
-            ,(intern  (symbol-name name) :keyword)
-            ,@body))))
-
 ;; general lookup-table functionality reachable from register
 (defvar *jr*) ;; like in Dallas, the reg with the contacts
 

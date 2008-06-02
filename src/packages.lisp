@@ -47,15 +47,6 @@
    :+oam-main+
 
    ;; assembly-helpers
-   :gather-code
-   :gather
-   :emit
-   :def-arm
-   :emit-arm-fns
-   :def-asm-fn
-   :def-asm-fn-lite
-   :set-asm-init-fn
-   :set-asm-init-routines
    :*jr*
    :*jr-hash*
    :*jr-address*
