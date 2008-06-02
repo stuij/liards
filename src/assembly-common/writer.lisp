@@ -43,150 +43,143 @@
          (line-height (+ *max-font-height* *line-spacing*))
          (max-lines (ceiling (/ screen-height line-height))))
 
-    (def-asm-fn test-writer ()
-      (emit-asm
 
-       :write-test-string
-       (adr string-pos :test-string)
-       (b :init-writer)
+    (def-asm-fn write-test-string
+      (adr string-pos :test-string)
+      (b :init-writer)
        
-       :test-string
-       (ea string)
-       align
+      :test-string
+      (ea string)
+      align
 
-       pool))
+      pool)
     
-    (def-asm-fn init-writer ()
+
+    (def-asm-fn init-writer   
       ;; entry-point of general assembly writing routines
       ;; they thrash register r0 through r12, so the calling whatever
       ;; better have some backup/restore around these if necessary
-      (emit-asm
-       ;; some put-current-regs-on-stack, set write arrays in relevant places routine
-       ;; here we assume the string-pos and color registers are set by the calling function 
-       :init-writer
+  
+      ;; some put-current-regs-on-stack, set write arrays in relevant places routine
+      ;; here we assume the string-pos and color registers are set by the calling function
 
-       ;; load the relevant registers with addresses
-       ;;(ldr x-dat (*jr* (ea (get-jr-offset 'char-x-data)))) done by calc-line
-       (ldr y-dat (*jr* (ea (get-jr-offset 'char-y-data))))
-       (ldr char-offsets (*jr* (ea (get-jr-offset 'char-offsets))))
-       (ldr char-widths (*jr* (ea (get-jr-offset 'char-widths))))
+      ;; load the relevant registers with addresses
+      ;;(ldr x-dat (*jr* (ea (get-jr-offset 'char-x-data)))) done by calc-line
+      (ldr y-dat (*jr* (ea (get-jr-offset 'char-y-data))))
+      (ldr char-offsets (*jr* (ea (get-jr-offset 'char-offsets))))
+      (ldr char-widths (*jr* (ea (get-jr-offset 'char-widths))))
 
-       (ldr screen-pos-offset +bank-a+)
-       (ldr line-nr (*jr* (ea (get-jr-offset 'text-line-nr)))) ;; ok, so i should just save
-       ;; (ldr line-nr (line-nr)) ;; these directly, in stead of this indirection
+      (ldr screen-pos-offset +bank-a+)
+      (ldr line-nr (*jr* (ea (get-jr-offset 'text-line-nr)))) ;; ok, so i should just save
+      ;; (ldr line-nr (line-nr)) ;; these directly, in stead of this indirection
        
-       (b :calc-line)
-       pool))
+      (b :calc-line)
+      pool)
 
-    (def-asm-fn calc-line ()
-      (emit-asm
-       :calc-line-after-write
 
-       ;; check if the current val is a line break or carriage return
-       ;; if so it has already been processed last time around. we just need to
-       ;; tell the counter this fact
-       (ldrb curr-char-val (string-pos))
-       (teq curr-char-val #xA)
-       (addeq string-pos string-pos #x1)
-       (teq curr-char-val #xD)
-       (addeq string-pos string-pos #x1)
+    (def-asm-fn calc-line-after-write
+      ;; check if the current val is a line break or carriage return
+      ;; if so it has already been processed last time around. we just need to
+      ;; tell the counter this fact
+      (ldrb curr-char-val (string-pos))
+      (teq curr-char-val #xA)
+      (addeq string-pos string-pos #x1)
+      (teq curr-char-val #xD)
+      (addeq string-pos string-pos #x1)
 
-       (ldr line-nr (*jr* (ea (get-jr-offset 'text-line-nr))))
-       ;; (ldr line-nr (line-nr))
+      (ldr line-nr (*jr* (ea (get-jr-offset 'text-line-nr))))
+      ;; (ldr line-nr (line-nr))
        
-       :calc-line
-       (teq line-nr max-lines)
-       (beq :write-return) ;; ideally we would want to scroll the screen in stead of
-       ;; exiting but i don't want to go into fast bulk memory transport just now
+      :calc-line
+      (teq line-nr max-lines)
+      (beq :write-return) ;; ideally we would want to scroll the screen in stead of
+      ;; exiting but i don't want to go into fast bulk memory transport just now
        
-       (mov char-accumulator 0)
-       (mov space-point 0)
+      (mov char-accumulator 0)
+      (mov space-point 0)
        
-       (mov bench-1 screen-width-min-some)
-       (sub bench-1 bench-1 4)
-       (mov string-tmp-offset string-pos)
+      (mov bench-1 screen-width-min-some)
+      (sub bench-1 bench-1 4)
+      (mov string-tmp-offset string-pos)
 
-       (b :char-line-countdown)
+      (b :char-line-countdown)
 
-       :add-one-and-countdown-char
-       (add char-accumulator char-accumulator 1)
+      :add-one-and-countdown-char
+      (add char-accumulator char-accumulator 1)
        
-       :char-line-countdown
-       (ldrb curr-char-val (string-tmp-offset) #x1)
+      :char-line-countdown
+      (ldrb curr-char-val (string-tmp-offset) #x1)
 
-       (teq curr-char-val 32)
-       (moveq space-point char-accumulator)
+      (teq curr-char-val 32)
+      (moveq space-point char-accumulator)
        
-       (cmp curr-char-val 32)
-       (bmi :resolve-non-printables)
+      (cmp curr-char-val 32)
+      (bmi :resolve-non-printables)
 
-       :non-printable-reentry-point       
-       (ldrb curr-char-width (char-widths curr-char-val))
-       (subs bench-1 bench-1 curr-char-width)
-       (bmi :write-line-setup)
-       (subs bench-1 bench-1 *space-length*)
-       (bpl :add-one-and-countdown-char)
+      :non-printable-reentry-point       
+      (ldrb curr-char-width (char-widths curr-char-val))
+      (subs bench-1 bench-1 curr-char-width)
+      (bmi :write-line-setup)
+      (subs bench-1 bench-1 *space-length*)
+      (bpl :add-one-and-countdown-char)
        
-       :write-line-setup
-       (add space-point space-point 1)
+      :write-line-setup
+      (add space-point space-point 1)
 
-       :write-line-setup-skip-space
-       (mov bench-1 line-height) ;; make alert that immediates can't barrel roll with move (all?)
-       (mov bench-1 bench-1 :lsl screen-root)
-       (mul bench-1 line-nr bench-1) ;; shouldn't mul be able to handle b-rolls and/or immediates.
-       (ldr screen-pos-offset +bank-a+)
-       (add screen-pos-offset screen-pos-offset bench-1)
+      :write-line-setup-skip-space
+      (mov bench-1 line-height) ;; make alert that immediates can't barrel roll with move (all?)
+      (mov bench-1 bench-1 :lsl screen-root)
+      (mul bench-1 line-nr bench-1) ;; shouldn't mul be able to handle b-rolls and/or immediates.
+      (ldr screen-pos-offset +bank-a+)
+      (add screen-pos-offset screen-pos-offset bench-1)
        
-       ;; put line nr back in jr and reinstate x-dat
-       (add line-nr line-nr 1)
-       ;; (ldr bench-1 (*jr* (ea (get-jr-offset 'text-line-nr))))
-       ;; (str line-nr (bench-1))
-       (str line-nr (*jr* (ea (get-jr-offset 'text-line-nr))))
-       ;; (re)set the missing/overwritten char fn constants
-       (ldr x-dat (*jr* (ea (get-jr-offset 'char-x-data))))
-       (ldr color (*jr* (ea (get-jr-offset 'text-color))))
+      ;; put line nr back in jr and reinstate x-dat
+      (add line-nr line-nr 1)
+      ;; (ldr bench-1 (*jr* (ea (get-jr-offset 'text-line-nr))))
+      ;; (str line-nr (bench-1))
+      (str line-nr (*jr* (ea (get-jr-offset 'text-line-nr))))
+      ;; (re)set the missing/overwritten char fn constants
+      (ldr x-dat (*jr* (ea (get-jr-offset 'char-x-data))))
+      (ldr color (*jr* (ea (get-jr-offset 'text-color))))
        
-       (b :write-line)
-       pool))
+      (b :write-line)
+      pool)
 
-    (def-asm-fn check-null ()
-      (emit-asm
-       :check-null-string
-       (add string-pos string-pos #x1)
-       (ldrb bench-1 (string-pos))
-       (teq bench-1 0)
-       (beq :write-return)
-       (b :calc-line-after-write)))
 
-    (def-asm-fn resolve-non-printable ()
-      (emit-asm
+    (def-asm-fn check-null-string
+      (add string-pos string-pos #x1)
+      (ldrb bench-1 (string-pos))
+      (teq bench-1 0)
+      (beq :write-return)
+      (b :calc-line-after-write))
 
-       :resolve-non-printables
+
+    (def-asm-fn resolve-non-printables
+      (teq curr-char-val 0)                ;; test for null value == eos
+      (moveq space-point char-accumulator) ;; maybe move these three instructions
+      ;; to their seperate procedure, in stead 
+      (beq :write-line-setup-skip-space) ;; of them much more often than not not being executed?
+
+      (teq curr-char-val 13) ;; carriage return
+      (moveq space-point char-accumulator)
+      (beq :write-line-setup-skip-space)       
+
+      (teq curr-char-val 10) ;; line feed
+      (moveq space-point char-accumulator)
        
-       (teq curr-char-val 0)                  ;; test for null value == eos
-       (moveq space-point char-accumulator) ;; maybe move these three instructions
-       ;; to their seperate procedure, in stead 
-       (beq :write-line-setup-skip-space) ;; of them much more often than not not being executed?
+      (beq :write-line-setup-skip-space)
 
-       (teq curr-char-val 13) ;; carriage return
-       (moveq space-point char-accumulator)
-       (beq :write-line-setup-skip-space)       
+      ;; TODO need still to handle the case (on win) where line feed and
+      ;; carriage return come in packs. Use the color or x-char reg
+      ;; which are still empty i believe with a predicate
 
-       (teq curr-char-val 10) ;; line feed
-       (moveq space-point char-accumulator)
-       
-       (beq :write-line-setup-skip-space)
+      ;; handle other cases on the dots
+      ;; ...
 
-       ;; TODO need still to handle the case (on win) where line feed and
-       ;; carriage return come in packs. Use the color or x-char reg
-       ;; which are still empty i believe with a predicate
-
-       ;; handle other cases on the dots
-       ;; ...
-
-       (b :non-printable-reentry-point)))
+      (b :non-printable-reentry-point))
     
-    (def-asm-fn write-line ()
+
+    (def-asm-fn-raw write-line ()
       (emit-asm
        :write-char-point
        
@@ -241,8 +234,8 @@
        :handle-space-offset
        (add screen-pos-offset screen-pos-offset *space-length* :lsl 1)
        (b :set-next-char)))
+
     
-    (def-asm-fn write-return ()
-      (emit-asm
-       :write-return
-       (b :write-return)))))
+    (def-asm-fn write-return
+      :write-return
+      (b :write-return))))
