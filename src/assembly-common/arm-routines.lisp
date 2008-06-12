@@ -1,5 +1,51 @@
 (in-package :liards)
 
+(in-block liards-common)
+
+;; general macros
+(def-asm-macro push-rs (reg &key cond)
+  ;; todo: needs bounds checking but can't be bothered with error handling right now
+  (let ((store (if cond
+                   (concat-symbol 'str cond)
+                   'str)))
+    `((,store ,reg (rp -4)!))))
+
+(def-asm-macro pop-rs (reg &key cond)
+  ;; todo: needs bounds checking but can't be bothered with error handling right now
+  (let ((load (if cond
+                  (concat-symbol 'ldr cond)
+                  'ldr)))
+    `((,load ,reg (rp) 4))))
+
+(def-asm-macro push-ps (reg &key cond)
+  ;; todo: needs bounds checking but can't be bothered with error handling right now
+  (let ((store (if cond
+                   (concat-symbol 'str cond)
+                   'str)))
+    `((,store ,reg (sp -4)!))))
+
+(def-asm-macro pop-ps (reg &key cond)
+  ;; todo: needs bounds checking but can't be bothered with error handling right now
+  (let ((load (if cond
+                  (concat-symbol 'ldr cond)
+                  'ldr)))
+    `((,load ,reg (sp) 4))))
+
+;; to circumvent no$gba problems
+(def-asm-macro b-and-l (label)
+  `((mov lr pc)
+    (b ,label)))
+
+(def-asm-macro b-and-l-ne (label)
+  `((movne lr pc)
+    (bne ,label)))
+
+
+;; general fns
+(def-asm-fn eternal-loop
+  (b :eternal-loop))
+
+;; ds fns
 (def-asm-fn init-system
   ;; for now, this basically means set up screens for writing
   (ldr r0 #x04000000)   ; hardware-registers offset and address of reg-disp-ctrl

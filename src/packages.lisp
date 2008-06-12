@@ -56,6 +56,14 @@
    :set-jr
    :check-jr-reachables
 
+   ;; arm-routines
+   :b-and-l
+   :b-and-l-ne
+   :push-rs
+   :pop-rs
+   :push-ps
+   :pop-ps
+
    ;; font
    :make-font
    :*text-color*
