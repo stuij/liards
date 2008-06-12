@@ -3,23 +3,24 @@
 (in-block liards-writer)
 
 (let* ( ;; regs
-       (bench-1 'r9)
-       (bench-2 'r1)
-       (chars-left 'r2)
-       (curr-char-countdown 'r3)    
-       (color 'r4)
+       (color 'r1)
+       (string-end 'r1)
+       (string-pos 'r2)
+       (curr-char-countdown 'r3)
+       (chars-left 'r4)
        (x-dat 'r5)
        (y-dat 'r6)
        (char-sizes 'r7)
        (char-widths 'r7)
        (char-offsets 'r8)
+       (bench-1 'r9)
        (screen-pos-offset 'r10)
-       (string-pos 'r11)
+       (bench-2 'r11)
        (curr-char-offset 'r12)
 
        ;;used exclusively for line calculation
-       (char-accumulator 'r1)
-       (space-point 'r2)
+       (char-accumulator 'r11)
+       (space-point 'r4)
        (string-tmp-offset 'r3)
        (line-nr 'r5)
        (curr-char-val 'r12)
@@ -38,23 +39,54 @@
 
 \"And so you can never catch up,\" the Tortoise concluded sympathetically.
 
-\"You are right, as always,\" said Achilles sadly, and conceded the race.")
+\"You are right, as always,\" said Achilles sadly, and conceded the race .")
+       (string-length (length string))
+       
        (screen-root 9) ; just lucky cause the ds screen width is 256 and so a power of two,
        ;; and so barrel rollable, times two because a pixel takes two bytes of memory 
        (screen-height #xC0)
        (line-height (+ *max-font-height* *line-spacing*))
-       (max-lines (ceiling (/ screen-height line-height))))
+       (max-lines (ceiling (/ screen-height line-height)))
+
+
+       (copy-up-distance (* line-height 256))
+       (copy-up-base (+ +bank-a+ copy-up-distance))
+       (copy-up-amount (+ copy-up-base (* copy-up-distance 10))))
 
 
   (def-asm-fn write-test-string
     (stmfd sp! (r1 r2 r3 r4 r5 r6 r7 r8 r9 r11 r12 r14))
     (ldr string-pos (address :test-string))
+    (ldr string-end string-length)
+    
     (b-and-l :init-writer)
     (ldmfd sp! (r1 r2 r3 r4 r5 r6 r7 r8 r9 r11 r12 r15))
     
     :test-string
     (ea string)
     align
+    pool)
+
+
+  (def-asm-fn scroll-up-1-line
+
+    (push-ps string-end)
+    (push-ps string-pos)
+    
+    (ldr string-pos copy-up-base) ;; orig-address
+    (ldr string-end +bank-a+)     ;; dest-address
+    (ldr bench-1 copy-up-amount)  ;; countdown
+
+    :scroll-up-1-line-loop
+    (ldr bench-2 (string-pos) 4)
+    (str bench-2 (string-end) 4)
+    (subs bench-1 bench-1 4)
+    (bpl :scroll-up-1-line-loop)
+
+    (pop-ps string-pos)
+    (pop-ps string-end)
+    (mov pc lr)
+
     pool)
 
   
@@ -68,14 +100,16 @@
 
     ;; load the relevant registers with addresses
     ;;(load-jr x-dat char-x-data) done by calc-line
+
+    (add string-end string-pos string-end)
+    
     (load-jr y-dat char-y-data)
     (load-jr char-offsets char-offsets)
     (load-jr char-widths char-widths)
 
     (ldr screen-pos-offset +bank-a+)
-    (load-jr line-nr text-line-nr) ;; ok, so i should just save
-    ;; (ldr line-nr (line-nr)) ;; these directly, in stead of this indirection
-       
+    (load-jr line-nr text-line-nr)
+    
     (b :calc-line)
     pool)
 
@@ -91,7 +125,6 @@
     (addeq string-pos string-pos #x1)
 
     (load-jr line-nr text-line-nr)
-    ;; (ldr line-nr (line-nr))
        
     :calc-line
     (teq line-nr max-lines)
@@ -111,6 +144,11 @@
     (add char-accumulator char-accumulator 1)
        
     :char-line-countdown
+    (cmp string-end string-tmp-offset)
+    (submi char-accumulator char-accumulator 1)
+    (movmi space-point char-accumulator)
+    (bmi :write-line-setup-skip-space)
+
     (ldrb curr-char-val (string-tmp-offset) #x1)
 
     (teq curr-char-val 32)
@@ -130,30 +168,29 @@
     (add space-point space-point 1)
 
     :write-line-setup-skip-space
-    (mov bench-1 line-height) ;; make alert that immediates can't barrel roll with move (all?)
+    (mov bench-1 line-height)
     (mov bench-1 bench-1 :lsl screen-root)
-    (mul bench-1 line-nr bench-1) ;; shouldn't mul be able to handle b-rolls and/or immediates.
+    (mul bench-1 line-nr bench-1)
     (ldr screen-pos-offset +bank-a+)
     (add screen-pos-offset screen-pos-offset bench-1)
        
     ;; put line nr back in jr and reinstate x-dat
     (add line-nr line-nr 1)
-    ;; (ldr bench-1 (*jr* (ea (get-jr-offset 'text-line-nr))))
-    ;; (str line-nr (bench-1))
     (store-jr line-nr text-line-nr)
     ;; (re)set the missing/overwritten char fn constants
     (load-jr x-dat char-x-data)
-    (load-jr color text-color)
+
        
     (b :write-line)
     pool)
 
 
-  (def-asm-fn check-null-string
+  (def-asm-fn check-string-end
     (add string-pos string-pos #x1)
-    (ldrb bench-1 (string-pos))
-    (teq bench-1 0)
-    (beq :write-return)
+    (cmp string-end string-pos)
+    
+    (bmi :write-return)
+    
     (b :calc-line-after-write))
 
 
@@ -199,9 +236,11 @@
      (subs curr-char-countdown curr-char-countdown 1)
      (bne :write-char-point)
 
+     (pop-ps string-end)
+     
      :set-next-char
      (subs chars-left chars-left 1)
-     (beq :check-null-string)
+     (beq :check-string-end)
 
      ;; add space to offset
      (add screen-pos-offset screen-pos-offset 4)
@@ -217,7 +256,7 @@
      :write-line
      ;; first test if we perhaps haven't got anything to print
      (teq chars-left 0)
-     (beq :check-null-string)
+     (beq :check-string-end)
 
      :setup-char-and-write
      (ldrb bench-1 (string-pos)) ;; load char val to bench-1
@@ -229,6 +268,8 @@
      (load-jr char-sizes char-sizes)
      (ldrb curr-char-countdown (char-sizes bench-1))
      (load-jr char-widths char-widths)
+     (push-ps string-end)
+     (load-jr color text-color)
        
      (ldr curr-char-offset (char-offsets bench-1 :lsl 2))
  
