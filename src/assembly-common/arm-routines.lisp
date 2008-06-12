@@ -60,21 +60,23 @@
   (str r2 (r0 0))
   (str r3 (r5 0))
 
-  (ldr r0 +bank-a+)
-  (ldr r2 #xC000) ;; nr of screen pixels
-
-  (b :write-test-string))
+  (mov r11 lr)
+  (b-and-l :write-screen-red)
+  (mov pc r11)
+  pool)
 
 (def-asm-fn write-screen-red
-  (strh r1 (r0 0))
-  (add r0 r0 #x2)
-  (sub r2 r2 #x1)
-  (bne :write-screen-red)
+  (ldr r0 +bank-a+) ;; base of bank a
+  (ldr r1 #xF)
+  (ldr r2 #xC000) ;; nr of screen pixels
 
-  (b :eternal-loop))
+  :write-screen-red-loop
+  (strh r1 (r0) 2)
+  (subs r2 r2 #x1)
+  (bne :write-screen-red-loop)
 
-(def-asm-fn eternal-loop
-  (b :eternal-loop))
+  (mov pc lr)
+  pool)
 
 (def-asm-fn error-handling
   (b :write-screen-red))
