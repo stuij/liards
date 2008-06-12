@@ -39,20 +39,20 @@
 
 \"And so you can never catch up,\" the Tortoise concluded sympathetically.
 
-\"You are right, as always,\" said Achilles sadly, and conceded the race .")
+\"You are right, as always,\" said Achilles sadly, and conceded the race.
+but then he thought....")
        (string-length (length string))
        
        (screen-root 9) ; just lucky cause the ds screen width is 256 and so a power of two,
        ;; and so barrel rollable, times two because a pixel takes two bytes of memory 
        (screen-height #xC0)
        (line-height (+ *max-font-height* *line-spacing*))
-       (max-lines (ceiling (/ screen-height line-height)))
+       (max-lines-plus-1 (+ (ceiling (/ screen-height line-height)) 1))
 
 
-       (copy-up-distance (* line-height 256))
+       (copy-up-distance (* line-height 256 2))
        (copy-up-base (+ +bank-a+ copy-up-distance))
-       (copy-up-amount (+ copy-up-base (* copy-up-distance 10))))
-
+       (copy-up-amount (* copy-up-distance #xD)))
 
   (def-asm-fn write-test-string
     (stmfd sp! (r1 r2 r3 r4 r5 r6 r7 r8 r9 r11 r12 r14))
@@ -85,7 +85,9 @@
 
     (pop-ps string-pos)
     (pop-ps string-end)
-    (mov pc lr)
+
+    (sub line-nr line-nr 1)
+    (b :calc-line) ;; and try again to see if line nr is not to high
 
     pool)
 
@@ -127,9 +129,8 @@
     (load-jr line-nr text-line-nr)
        
     :calc-line
-    (teq line-nr max-lines)
-    (beq :write-return) ;; ideally we would want to scroll the screen in stead of
-    ;; exiting but i don't want to go into fast bulk memory transport just now
+    (cmp line-nr max-lines-plus-1)
+    (bpl :scroll-up-1-line)
        
     (mov char-accumulator 0)
     (mov space-point 0)
@@ -195,10 +196,6 @@
 
 
   (def-asm-fn resolve-non-printables
-    (teq curr-char-val 0)                ;; test for null value == eos
-    (moveq space-point char-accumulator) ;; maybe move these three instructions
-    ;; to their seperate procedure, in stead 
-    (beq :write-line-setup-skip-space) ;; of them much more often than not not being executed?
 
     (teq curr-char-val 13) ;; carriage return
     (moveq space-point char-accumulator)
@@ -281,5 +278,7 @@
 
     
   (def-asm-fn write-return
-    :write-return
+    (load-jr r1 text-line-nr)
+    (add r1 r1 1)
+    (store-jr r1 text-line-nr)
     (mov pc lr)))
