@@ -14,9 +14,9 @@
 (defvar *max-font-height*)
 
 ;; some configurables
-(defvar *space-length*)
-(defvar *letter-spacing*)
-(defvar *line-spacing*)
+(defparameter *space-length* 2)
+(defparameter *letter-spacing* 1)
+(defparameter *line-spacing* 4)
 
 ;;font data
 (defvar *font-info*
@@ -827,3 +827,5 @@
                (setf *char-sizes* char-sizes)
                (setf *char-offsets* char-offsets)
                (setf *char-widths* char-widths))))
+
+(make-font)
