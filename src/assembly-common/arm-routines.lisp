@@ -78,4 +78,4 @@
   pool)
 
 (def-asm-fn error-handling
-  (b :write-screen-red))
+  (b :write-screen))
