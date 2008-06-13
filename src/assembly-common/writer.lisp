@@ -25,23 +25,10 @@
        (line-nr 'r5)
        (curr-char-val 'r12)
        (curr-char-width 'r12)
-       
-         
+                
        ;; letter/line calculation vars
        (screen-width #x100)
        (screen-width-min-some (- screen-width 4))
-
-       ;;(string "It's been a strong release week, especially with plenty of great new Xbox360™ releases. Popular sellers for Microsoft's system have been Ace Combat 6: Fires of Liberation (Japanese), Tomb Raider: Anniversary, The Simpsons Game, Guitar Hero III: Legends of Rock (also available as Wireless Guitar Bundle), Conan and SEGA Rally Revo (all Asia releases).")
-       ;;(string "bla")
-       (string "\"And so you see, in each moment you must be catching up the distance between us, and yet I, at the same time, will be adding a new distance, however small, for you to catch up again.\"
-
-\"Indeed, it must be so,\" said Achilles wearily.
-
-\"And so you can never catch up,\" the Tortoise concluded sympathetically.
-
-\"You are right, as always,\" said Achilles sadly, and conceded the race.
-but then he thought....")
-       (string-length (length string))
        
        (screen-root 9) ; just lucky cause the ds screen width is 256 and so a power of two,
        ;; and so barrel rollable, times two because a pixel takes two bytes of memory 
@@ -49,49 +36,19 @@ but then he thought....")
        (line-height (+ *max-font-height* *line-spacing*))
        (max-lines-plus-1 (+ (ceiling (/ screen-height line-height)) 1))
 
-
        (copy-up-distance (* line-height 256 2))
        (copy-up-base (+ +bank-a+ copy-up-distance))
-       (copy-up-amount (* copy-up-distance #xD)))
+       (copy-up-amount (+ (* 256 2) (* copy-up-distance #xC)))
+       (paint-over-base (- (+ +bank-a+ copy-up-amount) (* *line-spacing* 256 2))))
 
-  (def-asm-fn write-test-string
-    (stmfd sp! (r1 r2 r3 r4 r5 r6 r7 r8 r9 r11 r12 r14))
-    (ldr string-pos (address :test-string))
-    (ldr string-end string-length)
-    
-    (b-and-l :init-writer)
-    (ldmfd sp! (r1 r2 r3 r4 r5 r6 r7 r8 r9 r11 r12 r15))
-    
-    :test-string
-    (ea string)
-    align
-    pool)
-
-
-  (def-asm-fn scroll-up-1-line
-
-    (push-ps string-end)
-    (push-ps string-pos)
-    
-    (ldr string-pos copy-up-base) ;; orig-address
-    (ldr string-end +bank-a+)     ;; dest-address
-    (ldr bench-1 copy-up-amount)  ;; countdown
-
-    :scroll-up-1-line-loop
-    (ldr bench-2 (string-pos) 4)
-    (str bench-2 (string-end) 4)
-    (subs bench-1 bench-1 4)
-    (bpl :scroll-up-1-line-loop)
-
-    (pop-ps string-pos)
+  (def-asm-fn write-string
     (pop-ps string-end)
+    (pop-ps string-pos)
 
-    (sub line-nr line-nr 1)
-    (b :calc-line) ;; and try again to see if line nr is not to high
+    (stmfd sp! (r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 r14))
+    (b-and-l :init-writer)
+    (ldmfd sp! (r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 r15)))
 
-    pool)
-
-  
   (def-asm-fn init-writer   
     ;; entry-point of general assembly writing routines
     ;; they thrash register r0 through r12, so the calling whatever
@@ -105,7 +62,6 @@ but then he thought....")
 
     (add string-end string-pos string-end)
     
-    (load-jr y-dat char-y-data)
     (load-jr char-offsets char-offsets)
     (load-jr char-widths char-widths)
 
@@ -115,6 +71,45 @@ but then he thought....")
     (b :calc-line)
     pool)
 
+  (def-asm-fn scroll-up-1-line
+
+    (push-ps string-end)
+    (push-ps string-pos)
+    (push-ps bench-1)
+    (push-ps bench-2)
+    
+    (ldr string-pos copy-up-base) ;; orig-address
+    (ldr string-end +bank-a+)     ;; dest-address
+    (ldr bench-1 copy-up-amount)  ;; countdown
+
+    :scroll-up-1-line-loop
+    (ldr bench-2 (string-pos) 4)
+    (str bench-2 (string-end) 4)
+    (subs bench-1 bench-1 4)
+    (bpl :scroll-up-1-line-loop)
+
+    (ldr bench-1 #x10000)           ;; little
+    (load-jr bench-2 text-bg-color) ;; mumbo
+    (mul bench-1 bench-1 bench-2)   ;; jumbo
+    (orr bench-2 bench-1 bench-2) ;; to get the same color in upper and lower halfword
+    (ldr string-pos paint-over-base)
+    (ldr bench-1 copy-up-distance) ;; amount to be painted
+
+    :paint-line-loop
+    (str bench-2 (string-pos) 4)
+    (subs bench-1 bench-1 4)
+    (bpl :paint-line-loop)
+
+    (pop-ps bench-2)
+    (pop-ps bench-1)
+    (pop-ps string-pos)
+    (pop-ps string-end)
+
+    (sub line-nr line-nr 1)
+    (bkpt 0)
+    (b :line-nr-check) ;; and try again to see if line nr is not to high
+
+    pool)
 
   (def-asm-fn calc-line-after-write
     ;; check if the current val is a line break or carriage return
@@ -128,10 +123,7 @@ but then he thought....")
 
     (load-jr line-nr text-line-nr)
        
-    :calc-line
-    (cmp line-nr max-lines-plus-1)
-    (bpl :scroll-up-1-line)
-       
+    :calc-line       
     (mov char-accumulator 0)
     (mov space-point 0)
        
@@ -169,6 +161,14 @@ but then he thought....")
     (add space-point space-point 1)
 
     :write-line-setup-skip-space
+    
+    (add line-nr line-nr 1)
+    
+    :line-nr-check
+    (cmp line-nr max-lines-plus-1)
+    (bpl :scroll-up-1-line)
+    (sub line-nr line-nr 1)
+    
     (mov bench-1 line-height)
     (mov bench-1 bench-1 :lsl screen-root)
     (mul bench-1 line-nr bench-1)
@@ -178,17 +178,17 @@ but then he thought....")
     ;; put line nr back in jr and reinstate x-dat
     (add line-nr line-nr 1)
     (store-jr line-nr text-line-nr)
-    ;; (re)set the missing/overwritten char fn constants
-    (load-jr x-dat char-x-data)
 
-       
+    ;; (re)set the missing/overwritten char fn constants
+         
     (b :write-line)
     pool)
-
+  
 
   (def-asm-fn check-string-end
     (add string-pos string-pos #x1)
-    (cmp string-end string-pos)
+    (add bench-1 string-pos 1)
+    (cmp string-end bench-1)
     
     (bmi :write-return)
     
@@ -267,6 +267,8 @@ but then he thought....")
      (load-jr char-widths char-widths)
      (push-ps string-end)
      (load-jr color text-color)
+     (load-jr x-dat char-x-data)
+     (load-jr y-dat char-y-data)
        
      (ldr curr-char-offset (char-offsets bench-1 :lsl 2))
  
