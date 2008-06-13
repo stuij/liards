@@ -8,8 +8,8 @@
 (defparameter *jr* 'r0) ;; like in Dallas, the reg with the contacts
 
 (defparameter *jr-reachables*
-  '((text-color (word #xFFFF))
-    (text-bg-color (word #x0))
+  '((text-color (word #xFFFF)) ;; white
+    (text-bg-color (word #xF)) ;; dark red
     (text-line-nr (word 0))
     (text-line-pos (word 0))
 

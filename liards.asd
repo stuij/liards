@@ -16,7 +16,6 @@
                         ((:file "registers")
                          (:file "hardware-layout"))
                         :depends-on ("packages"))
-
                (:module :rom-creation
                         :components
                         ((:file "crc")                        

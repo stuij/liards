@@ -58,7 +58,6 @@
 
    ;; arm-routines
    :b-and-l
-   :b-and-l-ne
    :push-rs
    :pop-rs
    :push-ps

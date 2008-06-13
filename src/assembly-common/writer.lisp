@@ -106,7 +106,6 @@
     (pop-ps string-end)
 
     (sub line-nr line-nr 1)
-    (bkpt 0)
     (b :line-nr-check) ;; and try again to see if line nr is not to high
 
     pool)
@@ -121,8 +120,6 @@
     (teq curr-char-val #xD)
     (addeq string-pos string-pos #x1)
 
-    (load-jr line-nr text-line-nr)
-       
     :calc-line       
     (mov char-accumulator 0)
     (mov space-point 0)
@@ -161,7 +158,8 @@
     (add space-point space-point 1)
 
     :write-line-setup-skip-space
-    
+
+    (load-jr line-nr text-line-nr)
     (add line-nr line-nr 1)
     
     :line-nr-check
@@ -280,7 +278,4 @@
 
     
   (def-asm-fn write-return
-    (load-jr r1 text-line-nr)
-    (add r1 r1 1)
-    (store-jr r1 text-line-nr)
     (mov pc lr)))

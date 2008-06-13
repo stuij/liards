@@ -32,13 +32,12 @@
     `((,load ,reg (sp) 4))))
 
 ;; to circumvent no$gba problems
-(def-asm-macro b-and-l (label)
-  `((mov lr pc)
-    (b ,label)))
-
-(def-asm-macro b-and-l-ne (label)
-  `((movne lr pc)
-    (bne ,label)))
+(def-asm-macro b-and-l (label &key cond)
+  (let ((branch (if cond
+                  (concat-symbol 'b cond)
+                  'b)))
+    `((mov lr pc)
+      (,branch ,label))))
 
 
 ;; general fns
@@ -48,7 +47,7 @@
 ;; ds fns
 (def-asm-fn init-system
   ;; for now, this basically means set up screens for writing
-  (ldr r0 #x04000000)   ; hardware-registers offset and address of reg-disp-ctrl
+  (ldr r6 #x04000000)   ; hardware-registers offset and address of reg-disp-ctrl
   (mov r1 #x3)                             ; both screens on bits
   (ldr r2 #x00020000)                      ; framebuffer mode bits
   (mov r3 #x80)                            ; vram bank a enabled, lcd bits
@@ -57,23 +56,23 @@
   (sub r5 r5 #xC4)                         ; 0x04000240 == reg-vram-ctrl-a
 
   (str r1 (r4 0))
-  (str r2 (r0 0))
+  (str r2 (r6 0))
   (str r3 (r5 0))
 
   (mov r11 lr)
-  (b-and-l :write-screen-red)
+  (b-and-l :write-screen)
   (mov pc r11)
   pool)
 
-(def-asm-fn write-screen-red
-  (ldr r0 +bank-a+) ;; base of bank a
-  (ldr r1 #xF)
+(def-asm-fn write-screen
+  (ldr r3 +bank-a+) ;; base of bank a
+  (load-jr r1 text-bg-color)
   (ldr r2 #xC000) ;; nr of screen pixels
 
-  :write-screen-red-loop
-  (strh r1 (r0) 2)
+  :write-screen-loop
+  (strh r1 (r3) 2)
   (subs r2 r2 #x1)
-  (bne :write-screen-red-loop)
+  (bne :write-screen-loop)
 
   (mov pc lr)
   pool)
