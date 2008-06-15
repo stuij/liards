@@ -52,6 +52,11 @@
    :*jr-address*
    :*jr-reachables*
    :add-jr-reachables
+   :add-jr-reachable
+   :dump-jr-data
+   :load-jr
+   :store-jr
+   :load-jr-address
    :get-jr-offset
    :set-jr
    :check-jr-reachables
