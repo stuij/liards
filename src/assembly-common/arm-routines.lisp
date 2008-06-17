@@ -153,8 +153,10 @@
     (mov d q)                           ; r0 = quotient; r1=remainder; 
     (mov pc lr)                         ; return { r0, r1 } structure; 
 
-    :div-by-0 
+    :div-by-0
+    (push-ps lr)
     (b-and-l :divide-error)             ; to be implemented by client 
+    (pop-ps lr)
     (mov pc lr))
   
   (def-asm-fn sdiv-32by32-arm7m        ; __value_in_regs struct { signed q, r; }
